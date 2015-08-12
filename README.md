@@ -13,3 +13,13 @@ You need to install `lang/gawk` in order to run `intr_` plugin.
 3. run `munin-node-configure --suggest` and see if the plugins are detected.
 4. run `munin-node-configure --shell | sh -x` to make appropriate symlinks
 5. restart munin-node if running: `service munin-node restart`
+
+## Plugins
+
+- **intr_** graphs IRQ and CPU timers, taken from `vmstat -i` output
+- **netisr_** graphs per-thread/per-protocol [`netisr(9)`](https://www.freebsd.org/cgi/man.cgi?format=html&query=netisr%289%29) statistics, taken from `netstat -Q`
+- **netmem_** graphs [`mbuf(9)`](https://www.freebsd.org/cgi/man.cgi?format=html&query=mbuf%289%29) statistics, taken from `netstat -m`
+- **pf_** graphs [`pf(4)`](https://www.freebsd.org/cgi/man.cgi?query=pf&sektion=4&apropos=0) firewall statistics, taken from `pfctl -vsi`
+- **udp_** graphs UDP protocol traffic and error statistcs, taken from `netstat -s`
+
+
