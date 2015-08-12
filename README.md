@@ -2,9 +2,10 @@
 A set of FreeBSD specific plugins for Munin
 
 ## Requirements
-All scripts are written in standard shell language, and `/bin/sh` would be sufficient.
-They are tailored and will run on FreeBSD. 
-You need to install `lang/gawk` in order to run `intr_` plugin.
+- All scripts are written in standard shell language, and `/bin/sh` would be sufficient.
+- They are tailored and will run on FreeBSD.
+- You need to install `lang/gawk` in order to run `intr_` plugin.
+- These are wildcard plugins, and should be installed using `munin-node-configure` program
 
 ## Setup
 1. Make sure `sysutils/munin-node` is installed
