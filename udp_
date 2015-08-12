@@ -1,0 +1,132 @@
+#!/bin/sh
+#
+# Copyright (c) 2015 Babak Farrokhi.  All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+#
+# 10-Aug-2015 @farrokhi
+# This script extracts UDP traffic statistics from "netstat -s" 
+# on FreeBSD and feeds to munin
+#
+# Magic markers:
+#%# family=auto
+#%# capabilities=autoconf suggest
+
+
+SCRIPT_NAME=$(basename $0)
+STAT_TYPE=`echo $SCRIPT_NAME | sed -n s/udp_//p`
+NETSTAT="/usr/bin/netstat"
+
+
+STATFILE=`mktemp -t udp`
+${NETSTAT} -s > ${STATFILE} 2>/dev/null
+
+
+print_config()
+{
+	local fname=$1; shift;
+	local fdesc=$1; shift;
+
+	echo "${fname}.label ${fdesc}"
+	echo "${fname}.type DERIVE"
+	echo "${fname}.draw LINE1"
+	echo "${fname}.min 0"
+}
+
+if [ $# -lt 1 ]; then
+
+
+  case ${STAT_TYPE} in
+    traffic)
+		cat ${STATFILE} | grep "^udp:" -A12 | awk '
+/datagrams received/{print "received.value "$1};
+/ delivered$/		{print "delivered.value "$1};
+/datagrams output/	{print "sent.value "$1}
+'
+		;;
+    errors)
+		cat ${STATFILE} | grep "^udp:" -A12 | awk '
+/incomplete header/		{print "incomplete_header.value "$1};
+/bad data length field/	{print "bad_datalen.value "$1};
+/bad checksum/			{print "bad_checksum.value "$1}; 
+/with no checksum/		{print "no_checksum.value "$1}; 
+/due to no socket/		{print "nosock_drop.value "$1}; 
+/due to full socket/	{print "nobuf_drop.value "$1};
+/not for hashed pcb/	{print "nothashed.value "$1};
+'
+		;;
+  esac 
+
+
+elif [ "$1" == "suggest" ]; then   
+   echo "traffic"
+   echo "errors"
+
+elif [ "$1" == "autoconf" ]; then
+   ${NETSTAT} -s  >/dev/null 2>&1  && echo yes || echo no
+   exit 0
+
+elif [ "$1" == "config" ]; then
+
+  case ${STAT_TYPE} in
+    traffic)
+		echo "graph_title UDP Traffic"
+		echo "graph_args --lower-limit 0 --base 1000"
+		echo "graph_vlabel datagrams / second in (+) / out (-)"
+		echo "graph_category protocols"
+
+		echo "received.label Traffic In/Out"
+		echo "received.type DERIVE"
+		echo "received.min 0"
+		echo "received.graph no"
+
+		echo "delivered.label Delivered"
+		echo "delivered.type DERIVE"
+		echo "delivered.min 0"
+
+		echo "sent.label Traffic In/Out"
+		echo "sent.type DERIVE"
+		echo "sent.min 0"
+		echo "sent.negative received"
+	;;
+    errors)
+		echo "graph_title UDP Errors"
+		echo "graph_args --lower-limit 0 --base 1000"
+		echo "graph_vlabel datagrams / second"
+		echo "graph_category protocols"
+
+		print_config "incomplete_header" "Incomplere header"
+		print_config "bad_datalen" "Bad data length"
+		print_config "bad_checksum" "Bad checksum"
+		print_config "no_checksum" "No checksum"
+		print_config "nosock_drop" "Dropped due to no socket"
+		print_config "nobuf_drop" "Dropped due to full socket buffer"
+		print_config "nothashed" "Not hashed for PCB"
+	;;
+  esac
+
+fi
+
+rm ${STATFILE}
+

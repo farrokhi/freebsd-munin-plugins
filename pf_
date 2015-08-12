@@ -1,0 +1,153 @@
+#!/bin/sh
+#
+# Copyright (c) 2015 Babak Farrokhi.  All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+# 
+# 04-Aug-2015 @farrokhi
+# This script extracts pf firewall statistics from from "pfctl -vsi" 
+# on FreeBSD and feeds to munin
+#
+# Magic markers:
+#%# family=auto
+#%# capabilities=autoconf suggest
+
+
+SCRIPT_NAME=$(basename $0)
+STAT_TYPE=`echo $SCRIPT_NAME | sed -n s/pf_//p`
+PFCTL="/sbin/pfctl"
+
+
+STATFILE=`mktemp -t pf`
+${PFCTL} -vsi > ${STATFILE} 2>/dev/null
+
+print_config()
+{
+        local fname=$1; shift;
+        local fdesc=$1; shift;
+
+        echo "${fname}.label ${fdesc}"
+        echo "${fname}.draw LINE1"
+        echo "${fname}.type DERIVE"
+        echo "${fname}.min 0"
+}
+
+
+if [ $# -lt 1 ]; then
+
+  case ${STAT_TYPE} in
+    state)
+		cat ${STATFILE} | grep "^State Table" -A4 | grep "current" | awk '{print "state.value "$3}'
+		;;
+    state_act)
+		cat ${STATFILE} | grep "^State Table" -A4 | tail -3 | awk '{print "state_"$1".value",$2}'
+		;;
+    source)
+		cat ${STATFILE} | grep "^Source Tracking Table" -A4 | grep "current" | awk '{print "source.value "$3}'
+		;;
+    source_act)
+		cat ${STATFILE} | grep "^Source Tracking Table" -A4 | tail -3 | awk '{print "source_"$1".value",$2}'
+		;;
+    counters)
+		cat ${STATFILE} | grep "^Counters" -A15 | tail -15 | awk '{print "counter_"$1".value",$2}'
+		;;
+  esac 
+
+
+elif [ "$1" == "suggest" ]; then   
+   echo "state"
+   echo "state_act"
+   echo "source"
+   echo "source_act"
+   echo "counters"
+
+elif [ "$1" == "autoconf" ]; then
+   ${PFCTL} -si  >/dev/null 2>&1  && echo yes || echo no
+   exit 0
+
+elif [ "$1" == "config" ]; then
+
+  LIMITFILE=`mktemp -t pf`
+  ${PFCTL} -vsm > ${LIMITFILE} 2>/dev/null
+  MAX_STATES=`cat ${LIMITFILE} | grep "^states" | awk '{print $4}'`
+  MAX_SRC=`cat ${LIMITFILE} | grep "^src-nodes" | awk '{print $4}'`
+  rm ${LIMITFILE}
+
+
+  case ${STAT_TYPE} in
+    state)
+		echo "graph_title State Table Entries"
+		echo "graph_args --lower-limit 0 --base 1000"
+		echo "graph_vlabel states"
+		echo "graph_category firewall"
+
+		echo "state.label current"
+		echo "state.critical ${MAX_STATES}"
+	;;
+    state_act)
+		echo "graph_title State Table Activity"
+		echo "graph_args --lower-limit 0 --base 1000"
+		echo "graph_vlabel actions / second"
+		echo "graph_category firewall"
+
+		print_config "state_searches" "search"
+		print_config "state_inserts" "insert"
+		print_config "state_removals" "removal"
+	;;
+    source)
+		echo "graph_title Source Tracking Table Entries"
+		echo "graph_args --lower-limit 0 --base 1000"
+		echo "graph_vlabel sources"
+		echo "graph_category firewall"
+
+		echo "source.label current"
+		echo "source.min 0"
+		echo "source.critical ${MAX_SRC}"
+	;;
+    source_act)
+		echo "graph_title Source Tracking Table Activity"
+		echo "graph_args --lower-limit 0 --base 1000"
+		echo "graph_vlabel actions / second"
+		echo "graph_category firewall"
+
+		print_config "source_searches" "search"
+		print_config "source_inserts" "insert"
+		print_config "source_removals" "removal"
+	;;
+    counters)
+		echo "graph_title Misc Counters"
+		echo "graph_args --lower-limit 0 --base 1000"
+		echo "graph_vlabel actions / second"
+		echo "graph_category firewall"
+
+		for i in `cat ${STATFILE} | grep "^Counters" -A15 | tail -15 | awk '{print $1}' `; do
+			print_config "counter_${i}" ${i}
+		done	
+	;;
+  esac
+
+fi
+
+rm ${STATFILE}
+
