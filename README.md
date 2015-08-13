@@ -17,7 +17,8 @@ A set of FreeBSD specific plugins for Munin
 
 ## Plugins
 
-- **intr_** graphs IRQ and CPU timers, taken from `vmstat -i` output
+- **intr_** graphs CPU timers, taken from `vmstat -i` output
+- **netirq_** graphs per interface and per queue (in case of multi-queue) interrupt rates, taken from `vmstat -i` output
 - **netisr_** graphs per-thread/per-protocol [`netisr(9)`](https://www.freebsd.org/cgi/man.cgi?format=html&query=netisr%289%29) statistics, taken from `netstat -Q`
 - **netmem_** graphs [`mbuf(9)`](https://www.freebsd.org/cgi/man.cgi?format=html&query=mbuf%289%29) statistics, taken from `netstat -m`
 - **pf_** graphs [`pf(4)`](https://www.freebsd.org/cgi/man.cgi?query=pf&sektion=4&apropos=0) firewall statistics, taken from `pfctl -vsi`

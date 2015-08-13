@@ -52,15 +52,11 @@ if [ $# -lt 1 ]; then
     cpu)
 		cat ${STATFILE} | ${AWK} '{ FS = "[ ]{2,}" }  /^cpu/{split($1,name,":"); print name[1]".value "$2}'
 		;;
-    irq)
-		cat ${STATFILE} | ${AWK} '{ FS = "[ ]{2,}" }  /^irq/{split($1,name,":"); print name[1]".value "$2}'
-		;;
   esac 
 
 
 elif [ "$1" == "suggest" ]; then   
    echo "cpu"
-   echo "irq"
 
 elif [ "$1" == "autoconf" ]; then
    ${VMSTAT} -i  >/dev/null 2>&1  && echo yes || echo no
@@ -76,14 +72,6 @@ elif [ "$1" == "config" ]; then
 		echo "graph_category system"
 		
 		cat ${STATFILE} | ${AWK} '{ FS = "[ ]{2,}" }  /^cpu/{split($1,name,":"); print name[1]".label "$1"\n"name[1]".type DERIVE\n"name[1]".min 0"}'
-	;;
-    irq)
-		echo "graph_title IRQ Statistics"
-		echo "graph_args --lower-limit 0 --base 1000"
-		echo "graph_vlabel interrupts / second"
-		echo "graph_category system"
-
-		cat ${STATFILE} | ${AWK} '{ FS = "[ ]{2,}" }  /^irq/{split($1,name,":"); print name[1]".label "$1"\n"name[1]".type DERIVE\n"name[1]".min 0"}'
 	;;
   esac
 
