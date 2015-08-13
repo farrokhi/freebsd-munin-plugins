@@ -1,0 +1,57 @@
+#!/bin/sh
+#
+# 12-Aug-2015 @farrokhi
+# This script extracts IRQ interrupt rate for network interfaces from "vmstat -i" 
+# on FreeBSD and feeds to munin
+#
+# XXX: This script relies on lang/gawk (we use extended regexp in awk).
+#
+# Magic markers:
+#%# family=auto
+#%# capabilities=autoconf suggest
+
+
+SCRIPT_NAME=$(basename $0)
+STAT_TYPE=`echo $SCRIPT_NAME | sed -n s/netirq_//p`
+VMSTAT="/usr/bin/vmstat"
+AWK=`which gawk` || exit 1
+
+
+STATFILE=`mktemp -t netirq`
+${VMSTAT} -i | sort -V > ${STATFILE} 2>/dev/null
+
+if [ $# -lt 1 ]; then
+
+	if [ x${STAT_TYPE} == x ]; then
+		exit 1
+	fi
+
+	cat ${STATFILE} | ${AWK} '{ FS = "[ ]{2,}" }  /'${STAT_TYPE}'/{split($1,name,":"); print name[1]".value "$2}'
+
+
+elif [ "$1" == "suggest" ]; then   
+  for iface in `ifconfig -lu ether`; do
+   echo ${iface}
+  done
+
+elif [ "$1" == "autoconf" ]; then
+   ${VMSTAT} -i  >/dev/null 2>&1  && echo yes || echo no
+   exit 0
+
+elif [ "$1" == "config" ]; then
+
+	if [ x${STAT_TYPE} == x ]; then
+		exit 1
+	fi
+
+	echo "graph_title IRQ Statistics for ${STAT_TYPE}"
+	echo "graph_args --lower-limit 0 --base 1000"
+	echo "graph_vlabel interrupts / second"
+	echo "graph_category system"
+
+	cat ${STATFILE} | ${AWK} '{ FS = "[ ]{3,}" }  /'${STAT_TYPE}'/{split($1,name,":"); print name[1]".label "$1"\n"name[1]".type DERIVE\n"name[1]".min 0"}'
+
+fi
+
+rm ${STATFILE}
+
