@@ -26,7 +26,7 @@
 #
 #
 # 12-Aug-2015 @farrokhi
-# This script extracts CPU and IRQ interrupt rates from "vmstat -i" 
+# This script extracts CPU interrupt rates from "vmstat -i" 
 # on FreeBSD and feeds to munin
 #
 # XXX: This script requires lang/gawk to be installed (we use extended regexp in awk).

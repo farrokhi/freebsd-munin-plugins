@@ -49,7 +49,19 @@ elif [ "$1" == "config" ]; then
 	echo "graph_vlabel interrupts / second"
 	echo "graph_category system"
 
-	cat ${STATFILE} | ${AWK} '{ FS = "[ ]{3,}" }  /'${STAT_TYPE}'/{split($1,name,":"); print name[1]".label "$1"\n"name[1]".type DERIVE\n"name[1]".min 0"}'
+	cat ${STATFILE} | ${AWK} '
+BEGIN { 
+	FS = "[ ]{2,}" 
+}  
+
+/'${STAT_TYPE}'/ {
+	split($1,name,":"); 
+	print name[1]".label "$1;
+	print name[1]".type DERIVE";
+	print name[1]".min 0";
+	print name[1]".draw LINE2";
+}
+'
 
 fi
 
