@@ -28,3 +28,7 @@ A set of FreeBSD specific plugins for Munin
 - **ipmi_** graphs temprature, fan speed and power information from hardwre chassis, taken from `ipmitool`
 - **multiping_** graphs RTT and PacketLoss to multiple desinations from multiple source addresses on a given network interface
 
+## Sample Graphs
+![IPMI Temprature](http://farrokhi.net/~farrokhi/munin-plugins/ipmi_temp-day.png)
+![NIC IRQ Per Queue](http://farrokhi.net/~farrokhi/munin-plugins/netirq_ix1-day.png)
+![PF Misc Counters](http://farrokhi.net/~farrokhi/munin-plugins/pf_counters-day.png)
