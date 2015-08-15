@@ -23,5 +23,6 @@ A set of FreeBSD specific plugins for Munin
 - **netmem_** graphs [`mbuf(9)`](https://www.freebsd.org/cgi/man.cgi?format=html&query=mbuf%289%29) statistics, taken from `netstat -m`
 - **pf_** graphs [`pf(4)`](https://www.freebsd.org/cgi/man.cgi?query=pf&sektion=4&apropos=0) firewall statistics, taken from `pfctl -vsi`
 - **udp_** graphs UDP protocol traffic and error statistcs, taken from `netstat -s`
-
+- **ipmi_** graphs temprature, fan speed and power information from hardwre chassis, taken from `ipmitool`
+- **multiping_** graphs RTT and PacketLoss to multiple desinations from multiple source addresses on a given network interface
 
