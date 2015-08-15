@@ -122,7 +122,8 @@ elif [ "$1" == "config" ]; then
 	
 	echo "multigraph loss_${FSRC}"
 	echo "graph_title Packet Loss Statistics for ${SRC}"
-	echo "graph_args -r --upper-limit 100 --lower-limit 0 --base 1000"
+	echo "graph_args --units-exponent 0 -r --upper-limit 100 --lower-limit 0 --base 1000"
+	echo "graph_scale no"
 	echo "graph_vlabel percent"
 	echo "graph_category connectivity"
 	echo "graph_info This graph shows ICMP Packet Loss for source address ${SRC} on interface ${interface} toward multiple destination hosts"
