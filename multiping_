@@ -84,12 +84,12 @@ elif [ "$1" == "autoconf" ]; then
 
 	if [ x${hosts} == x ]; then
 		echo "no (env.hosts is not defined)"
-		exit 1
+		exit 0
 	fi
 
 	if [ x${interface} == x ]; then
 		echo "no (env.interface is not defined)"
-		exit 1
+		exit 0
 	fi
 
 	### check env vars and return no if not set properly
