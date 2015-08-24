@@ -39,7 +39,7 @@
 SCRIPT_NAME=$(basename $0)
 STAT_TYPE=`echo $SCRIPT_NAME | sed -n s/netirq_//p`
 VMSTAT="/usr/bin/vmstat"
-AWK=`which gawk` || exit 1
+AWK=`which gawk` || ( echo "gawk not found"; exit 1 )
 
 
 STATFILE=`mktemp -t netirq`
