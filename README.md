@@ -24,11 +24,12 @@ A set of FreeBSD specific plugins for Munin
 - **netisr_** graphs per-thread/per-protocol [`netisr(9)`](https://www.freebsd.org/cgi/man.cgi?format=html&query=netisr%289%29) statistics, taken from `netstat -Q`
 - **netmem_** graphs [`mbuf(9)`](https://www.freebsd.org/cgi/man.cgi?format=html&query=mbuf%289%29) statistics, taken from `netstat -m`
 - **pf_** graphs [`pf(4)`](https://www.freebsd.org/cgi/man.cgi?query=pf&sektion=4&apropos=0) firewall statistics, taken from `pfctl -vsi`
-- **udp_** graphs UDP protocol traffic and error statistcs, taken from `netstat -s`
-- **ipmi_** graphs temprature, fan speed and power information from hardwre chassis, taken from `ipmitool`
-- **multiping_** graphs RTT and PacketLoss to multiple desinations from multiple source addresses on a given network interface
+- **udp_** graphs UDP protocol traffic and error statistics, taken from `netstat -s -p udp`
+- **ip_** graphs IP protocol traffic and error statistics, taken from `netstat -s -p ip`
+- **ipmi_** graphs temperature, fan speed and power information from hardware chassis, taken from `ipmitool`
+- **multiping_** graphs RTT and PacketLoss to multiple destinations from multiple source addresses on a given network interface
 
 ## Sample Graphs
-![IPMI Temprature](screenshots/ipmi_temp-day.png "Temprature from ipmi_ plugin")
+![IPMI Temperature](screenshots/ipmi_temp-day.png "Temperature from ipmi_ plugin")
 ![NIC IRQ Per Queue](screenshots/netirq_ix1-day.png "Per Interface/Queue IRQ graph")
 ![PF Misc Counters](screenshots/pf_counters-day.png "PF Misc Counters")
