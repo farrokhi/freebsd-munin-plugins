@@ -1,0 +1,133 @@
+#!/bin/sh
+#
+# Copyright (c) 2015 Babak Farrokhi.  All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+#
+# 10-Aug-2015 @farrokhi
+# This script extracts IP traffic statistics from "netstat -s" 
+# on FreeBSD and feeds to munin
+#
+# Magic markers:
+#%# family=auto
+#%# capabilities=autoconf suggest
+
+
+SCRIPT_NAME=$(basename $0)
+STAT_TYPE=`echo $SCRIPT_NAME | sed -n s/ip_//p`
+NETSTAT="/usr/bin/netstat"
+
+
+STATFILE=`mktemp -t ip`
+${NETSTAT} -s -p ip> ${STATFILE} 2>/dev/null
+
+
+print_config()
+{
+	local fname=$1; shift;
+	local fdesc=$1; shift;
+	local color=$1; shift;
+	local draw=${1-"LINE1"}; shift;
+
+	echo "${fname}.label ${fdesc}"
+	echo "${fname}.type DERIVE"
+	echo "${fname}.draw ${draw}"
+	echo "${fname}.min 0"
+
+	if [ ! -z ${color} ]; then
+		echo "${fname}.colour ${color}"
+	fi	
+}
+
+if [ $# -lt 1 ]; then
+
+
+  case ${STAT_TYPE} in
+    forwarding)
+		awk '
+/packets forwarded/ {
+	fast=$4;
+	gsub(/\(/, "", fast);
+	print "forwarded.value "$1;
+	print "fastforwarded.value "fast;
+	};
+' ${STATFILE}
+		;;
+    drops)
+		awk '
+/output packets dropped due/		{print "nobuf_drop.value "$1};
+' ${STATFILE}
+		;;
+	host)
+		awk '
+/packets for this host/ {			print "hostrecvd.value "$1};
+/packets sent from this host/ {		print "hostsent.value "$1};
+' ${STATFILE};	
+		;;
+  esac 
+
+elif [ "$1" == "suggest" ]; then   
+   echo "forwarding"
+   echo "drops"
+   echo "host"
+
+elif [ "$1" == "autoconf" ]; then
+   ${NETSTAT} -s  >/dev/null 2>&1  && echo yes || echo no
+   exit 0
+
+elif [ "$1" == "config" ]; then
+
+  case ${STAT_TYPE} in
+    forwarding)
+		echo "graph_title IP Forwarding"
+		echo "graph_args --lower-limit 0 --base 1000"
+		echo "graph_vlabel packet / second"
+		echo "graph_category protocols"
+
+		print_config "fastforwarded" "Fast Forwarded" COLOUR18 AREA
+		print_config "forwarded" "Forwarded" COLOUR10 LINE2
+	;;
+    drops)
+		echo "graph_title IP Output Drops"
+		echo "graph_args --lower-limit 0 --base 1000"
+		echo "graph_vlabel packets / second"
+		echo "graph_category protocols"
+
+		print_config "nobuf_drop" "Output drop due to no buf" COLOUR15 LINE2
+	;;
+	host)
+		echo "graph_title Local Packets"
+		echo "graph_args --lower-limit 0 --base 1000"
+		echo "graph_vlabel packets / second"
+		echo "graph_category protocols"
+
+		print_config "hostrecvd" "Packets received for this host" 
+		print_config "hostsent"  "Packets sent from this host"
+	;;
+  esac
+
+fi
+
+rm ${STATFILE}
+
