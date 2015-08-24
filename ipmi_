@@ -54,7 +54,7 @@ FreeBSD compatibility by Babak Farrokhi (farrokhi@FreeBSD.org)
 #### Parse commandline to determine what the job is
 
 CONFIG=no
-IPMICMD=`which ipmitool` || exit 1
+IPMICMD=`which ipmitool` || ( echo "ipmitool not found" ; exit 1 )
 
 case $1 in
     autoconf)
