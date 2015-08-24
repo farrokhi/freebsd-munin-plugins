@@ -40,7 +40,7 @@ NETSTAT="/usr/bin/netstat"
 
 
 STATFILE=`mktemp -t udp`
-${NETSTAT} -s > ${STATFILE} 2>/dev/null
+${NETSTAT} -s -p udp > ${STATFILE} 2>/dev/null
 
 
 print_config()
@@ -59,14 +59,14 @@ if [ $# -lt 1 ]; then
 
   case ${STAT_TYPE} in
     traffic)
-		cat ${STATFILE} | grep "^udp:" -A12 | awk '
+		awk '
 /datagrams received/{print "received.value "$1};
 / delivered$/		{print "delivered.value "$1};
 /datagrams output/	{print "sent.value "$1}
-'
+' ${STATFILE}
 		;;
     errors)
-		cat ${STATFILE} | grep "^udp:" -A12 | awk '
+		awk '
 /incomplete header/		{print "incomplete_header.value "$1};
 /bad data length field/	{print "bad_datalen.value "$1};
 /bad checksum/			{print "bad_checksum.value "$1}; 
@@ -74,7 +74,7 @@ if [ $# -lt 1 ]; then
 /due to no socket/		{print "nosock_drop.value "$1}; 
 /due to full socket/	{print "nobuf_drop.value "$1};
 /not for hashed pcb/	{print "nothashed.value "$1};
-'
+' ${STATFILE}
 		;;
   esac 
 
