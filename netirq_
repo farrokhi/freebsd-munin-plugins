@@ -47,11 +47,17 @@ ${VMSTAT} -i | sort -V > ${STATFILE} 2>/dev/null
 
 if [ $# -lt 1 ]; then
 
-	if [ x${STAT_TYPE} == x ]; then
+	if [ -z ${STAT_TYPE} ]; then
+		echo "Should run from symlink"
 		exit 1
 	fi
 
-	cat ${STATFILE} | ${AWK} '{ FS = "[ ]{2,}" }  /'${STAT_TYPE}'/{split($1,name,":"); print name[1]".value "$2}'
+	${AWK} '
+{ FS = "[ ]{2,}" }  
+/'${STAT_TYPE}'/ {
+	split($1,name,":"); 
+	print name[1]".value "$2
+}' ${STATFILE}
 
 
 elif [ "$1" == "suggest" ]; then   
@@ -65,7 +71,8 @@ elif [ "$1" == "autoconf" ]; then
 
 elif [ "$1" == "config" ]; then
 
-	if [ x${STAT_TYPE} == x ]; then
+	if [ -z ${STAT_TYPE} ]; then
+		echo "Should run from symlink";
 		exit 1
 	fi
 
