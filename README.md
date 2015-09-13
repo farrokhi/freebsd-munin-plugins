@@ -1,4 +1,8 @@
 # freebsd-munin-plugins
+[![Issues](https://img.shields.io/github/issues/farrokhi/freebsd-munin-plugins.svg)](https://github.com/farrokhi/freebsd-munin-plugins/issues)
+[![GitHub License](https://img.shields.io/github/license/farrokhi/freebsd-munin-plugins.svg)](https://github.com/farrokhi/freebsd-munin-plugins/blob/master/LICENSE)
+
+
 A set of FreeBSD specific plugins for Munin
 
 ## Requirements
