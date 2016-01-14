@@ -1,0 +1,89 @@
+#!/bin/sh
+# -*- sh -*-
+: << =cut
+
+=head1 NAME
+
+tcpstates - Plugin to monitor TCP socket states
+
+=head1 CONFIGURATION
+
+No configuration
+
+=head1 AUTHOR
+
+Babak Farrokhi
+
+=head1 LICENSE
+
+BSD 2-Clause License
+
+=head1 BUGS
+
+=head1 MAGIC MARKERS
+
+ #%# family=auto
+ #%# capabilities=autoconf
+
+=cut
+
+. $MUNIN_LIBDIR/plugins/plugin.sh
+
+print_cfg() {
+  fname=$1
+  fdesc=`echo $1 | tr [:lower:] [:upper:]`
+	
+   echo "$fname.label $fdesc"
+	echo "$fname.type DERIVE"
+	echo "$fname.min 0"
+	echo "$fname.max 50000"
+	echo "$fname.info The number of sockets in $fdesc state"
+	print_warning $fname
+	print_critical $fname
+}
+
+
+if [ "$1" = "autoconf" ]; then
+	if ( /usr/bin/netstat -s 2>/dev/null >/dev/null ); then
+		echo yes
+		exit 0
+	else
+		if [ $? -eq 127 ]
+		then
+			echo "no (netstat program not found)"
+			exit 0
+		else
+			echo no
+			exit 0
+		fi
+	fi
+fi
+
+if [ "$1" = "config" ]; then
+
+	echo 'graph_title TCP Socket States'
+	echo 'graph_args --base 1000'
+	echo 'graph_vlabel  TCP states per ${graph_period}'
+	echo 'graph_category network'
+	echo 'graph_period second'
+	echo 'graph_info This graph shows the TCP activity of all the network interfaces combined.'
+
+   for f in syn_sent listen time_wait closing closed last_ack fin_wait_1 fin_wait_2 close_wait
+      do
+         print_cfg $f
+      done
+	
+   exit 0
+fi
+
+netstat -an | grep ^tcp4 | awk '{print $6}' | sort | uniq -c | awk '
+/SYN_SENT/            { print "syn_sent.value " $1 }
+/LISTEN/              { print "listen.value " $1 }
+/TIME_WAIT/           { print "time_wait.value " $1 }
+/CLOSING/             { print "closing.value " $1 }
+/CLOSED/              { print "closed.value " $1 }
+/LAST_ACK/            { print "last_ack.value " $1 }
+/FIN_WAIT_1/          { print "fin_wait_1.value " $1 }
+/FIN_WAIT_2/          { print "fin_wait_2.value " $1 }
+/CLOSE_WAIT/            { print "close_wait.value " $1 }'
+
