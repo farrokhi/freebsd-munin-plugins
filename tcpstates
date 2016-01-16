@@ -34,12 +34,11 @@ print_cfg() {
   fdesc=`echo $1 | tr [:lower:] [:upper:]`
 	
    echo "$fname.label $fdesc"
-	echo "$fname.type DERIVE"
-	echo "$fname.min 0"
-	echo "$fname.max 50000"
-	echo "$fname.info The number of sockets in $fdesc state"
-	print_warning $fname
-	print_critical $fname
+   echo "$fname.min 0"
+   echo "$fname.max 50000"
+   echo "$fname.info The number of sockets in $fdesc state"
+   print_warning $fname
+   print_critical $fname
 }
 
 
