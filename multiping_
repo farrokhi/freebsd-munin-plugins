@@ -42,7 +42,7 @@
 
 SCRIPT_NAME=$(basename $0)
 SRC=`echo $SCRIPT_NAME | sed -n s/multiping_//p`
-PING=`which ping` || exit 1
+FPING=`which fping` || exit 1
 FSRC=`echo ${SRC} | sed 's/\./_/g'`
 IPS=`ifconfig ${interface} | awk '/inet /{print $2}' | grep -Ev '^(10|192)\.'`
 
@@ -55,19 +55,15 @@ if [ $# -lt 1 ]; then
 	
 	TMPFILE=`mktemp -t multiping`
 
-	for DST in `echo ${hosts} | tr , " "`; do
-		fname=`echo ${DST} | sed 's/\./_/g'` 
-		ping -q -W1 -i0.1 -c10 -S ${SRC} ${DST} | sed 's/\// /g' | awk '
-/^round-trip/ {
-	print "rtt_'${fname}'.value " $7;
-}
-/ packet loss/ {
-	loss=$7;
-	gsub(/\%/, "", loss); 
-	print "loss_'${fname}'.value " loss;
+	DST=`echo ${hosts} | tr , " "`
+	fname=`echo ${DST} | sed 's/\./_/g'` 
+	${FPING} -A -q -s -i10 -c50 -p 25 -S ${SRC} -t1000 ${DST} 2>&1 | grep ':' | tr '%/,' ' ' | awk '
+/xmt/ { 
+        printf "rtt_%s.value %0.0f\n", $1, $15; 
+        printf "loss_%s.value %0.0f\n", $1, $9; 
 }
 ' >> ${TMPFILE}
-	done
+	
 
 	echo "multigraph rtt_${FSRC}"
 	grep ^rtt ${TMPFILE}
