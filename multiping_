@@ -1,11 +1,22 @@
-#!/bin/sh
-#
+#!/bin/sh       
+#               
 # Copyright (c) 2016 Babak Farrokhi.  All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
 # are met:
 #
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+root@CGN:~/freebsd-munin-plugins # cat ip_ | head -30
+#!/bin/sh       
+#
+# Copyright (c) 2016 Babak Farrokhi.  All rights reserved.
+#       
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:      
+#               
 # 1. Redistributions of source code must retain the above copyright
 #    notice, this list of conditions and the following disclaimer.
 # 2. Redistributions in binary form must reproduce the above copyright
@@ -48,7 +59,7 @@ IPS=`ifconfig ${interface} | awk '/inet /{print $2}' | grep -Ev '^(10|192)\.'`
 
 if [ $# -lt 1 ]; then
 
-	if [ x${SRC} == x ]; then
+	if [ "x${SRC}" == "x" ]; then
 		echo "should run from symlink"
 		exit 1
 	fi
@@ -82,14 +93,14 @@ elif [ "$1" == "suggest" ]; then
 
 elif [ "$1" == "autoconf" ]; then
 
-	if [ x${hosts} == x ]; then
+	if [ "x${hosts}" == "x" ]; then
 		echo "no (env.hosts is not defined)"
-		exit 0
+		exit 1
 	fi
 
-	if [ x${interface} == x ]; then
+	if [ "x${interface}" == "x" ]; then
 		echo "no (env.interface is not defined)"
-		exit 0
+		exit 1
 	fi
 
 	### check env vars and return no if not set properly
@@ -98,7 +109,7 @@ elif [ "$1" == "autoconf" ]; then
 
 elif [ "$1" == "config" ]; then
 
-	if [ x${SRC} == x ]; then
+	if [ "x${SRC}" == "x" ]; then
 		exit 1
 	fi
 
