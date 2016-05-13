@@ -59,8 +59,10 @@ if [ $# -lt 1 ]; then
 	fname=`echo ${DST} | sed 's/\./_/g'` 
 	${FPING} -A -q -s -i10 -c50 -p 25 -S ${SRC} -t1000 ${DST} 2>&1 | grep ':' | tr '%/,' ' ' | awk '
 /xmt/ { 
-        printf "rtt_%s.value %0.0f\n", $1, $15; 
-        printf "loss_%s.value %0.0f\n", $1, $9; 
+        name = $1;
+	gsub(/\./, "_", name);
+        printf "rtt_%s.value %0.0f\n", name, $15; 
+        printf "loss_%s.value %0.0f\n", name, $9; 
 }
 ' >> ${TMPFILE}
 	
