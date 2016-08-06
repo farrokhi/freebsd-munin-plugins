@@ -48,7 +48,7 @@ IPS=`ifconfig ${interface} | awk '/inet /{print $2}' | grep -Ev '^(10|192)\.'`
 
 if [ $# -lt 1 ]; then
 
-	if [ "x${SRC}" == "x" ]; then
+	if [ -z ${SRC} ]; then
 		echo "should run from symlink"
 		exit 1
 	fi
@@ -80,12 +80,12 @@ elif [ "$1" == "suggest" ]; then
 
 elif [ "$1" == "autoconf" ]; then
 
-	if [ "x${hosts}" == "x" ]; then
+	if [ -z ${hosts} ]; then
 		echo "no (env.hosts is not defined)"
 		exit 1
 	fi
 
-	if [ "x${interface}" == "x" ]; then
+	if [ -z ${interface} ]; then
 		echo "no (env.interface is not defined)"
 		exit 1
 	fi
@@ -96,7 +96,7 @@ elif [ "$1" == "autoconf" ]; then
 
 elif [ "$1" == "config" ]; then
 
-	if [ "x${SRC}" == "x" ]; then
+	if [ -z ${SRC} ]; then
 		exit 1
 	fi
 
