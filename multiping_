@@ -42,7 +42,7 @@
 
 SCRIPT_NAME=$(basename $0)
 SRC=`echo $SCRIPT_NAME | sed -n s/multiping_//p`
-FPING=`which fping` || exit 1
+FPING=`which fping` || ( echo "fping required but not found"; exit 1)
 FSRC=`echo ${SRC} | sed 's/\./_/g'`
 IPS=`ifconfig ${interface} | awk '/inet /{print $2}' | grep -Ev '^(10|192)\.'`
 
