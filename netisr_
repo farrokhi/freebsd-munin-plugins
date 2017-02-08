@@ -58,7 +58,7 @@ if [ $# -lt 1 ]; then
 
 elif [ "$1" == "suggest" ]; then
 	
-	awk '/---/{print $1}' ${STATFILE}
+	awk '/--$/{print $1}' ${STATFILE}
 
 elif [ "$1" == "autoconf" ]; then
    ${NETSTAT} -Q  >/dev/null 2>&1  && echo yes || echo no

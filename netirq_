@@ -88,7 +88,8 @@ BEGIN {
 
 /'${STAT_TYPE}'/ {
 	split($1,name,":"); 
-	print name[1]".label "$1;
+        gsub(/ /,"", $1);
+	print name[1]".label " $1;
 	print name[1]".type DERIVE";
 	print name[1]".min 0";
 	print name[1]".draw LINE2";
