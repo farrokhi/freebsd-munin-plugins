@@ -1,0 +1,65 @@
+#!/bin/sh
+#
+# Copyright (c) 2015 Babak Farrokhi.  All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+#
+# March-2017 @farrokhi
+# This plugin extracts "ip input" buffer overruns using sysctl and feeds
+# to munin (or any other compatible agent) for graphing
+#
+# Buffer overrung on IP Input happens when CPU is not fast enough
+# to pick ip packet from queue. This can be observed by seeing a 
+# CPU hogging "task queue" process in top.
+#
+# Magic markers:
+#%# family=auto
+#%# capabilities=autoconf 
+
+
+SCRIPT_NAME=$(basename $0)
+
+if [ $# -lt 1 ]; then
+
+	DROPS=`sysctl -n net.inet.ip.intr_queue_drops`
+	echo ip_idrops.value ${DROPS}
+
+
+elif [ "$1" == "autoconf" ]; then
+   echo yes
+   exit 0
+
+elif [ "$1" == "config" ]; then
+
+	echo "graph_title IP Input Drops"
+	echo "graph_args --lower-limit 0 --base 1000"
+	echo "graph_vlabel packets / second"
+	echo "graph_category system"
+
+	echo ip_idrops.label "Input Drops"
+	echo ip_idrops.type DERIVE
+	echo ip_idrops.min 0
+
+fi
+
