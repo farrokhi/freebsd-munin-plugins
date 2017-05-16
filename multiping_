@@ -32,8 +32,15 @@
 # Configuration sample:
 # [multiping_*]
 # user root
-# env.interface igb0
+# env.interface igb0:1 igb1:2
 # env.hosts "4.2.2.4, ripe.net, 192.168.0.5, 8.8.4.4"
+#
+#
+# with env.interface variable, every interface should be suffixed with
+# its fib number. In a normal environment, fib should always be 0. If
+# you are using multiple routing tables you should use correct fib 
+# number (e.g. igb1 on fib 4 will be igb1:4).
+#
 #
 # Magic markers:
 #%# family=auto
@@ -41,28 +48,30 @@
 
 
 SCRIPT_NAME=$(basename $0)
-SRC=`echo $SCRIPT_NAME | sed -n s/multiping_//p`
+SRC=`echo $SCRIPT_NAME | sed -n s/multiping_//p | cut -f1 -d_`
+FIB=`echo $SCRIPT_NAME | sed -n s/multiping_//p | cut -f2 -d_`
 FPING=`which fping` || ( echo "fping required but not found"; exit 1)
 FSRC=`echo ${SRC} | sed 's/\./_/g'`
-
-IPS=""
-for int in ${interface}; do
-    IPTEMP=`ifconfig ${int} | grep -v tunnel | awk '/inet /{print $2}' | grep -Ev '^(10|192|127)\.'`
-    IPS="${IPS} ${IPTEMP}"
-done
+SETFIB="/usr/sbin/setfib ${FIB}"
 
 if [ $# -lt 1 ]; then
 
-	if [ -z ${SRC} ]; then
+	if [ -z "${SRC}" ]; then
 		echo "should run from symlink"
 		exit 1
 	fi
 	
+	if [ -z "${hosts}" ]; then
+		echo "Unknown destination address"
+		exit 1
+	fi
+
 	TMPFILE=`mktemp -t multiping`
 
 	DST=`echo ${hosts} | tr , " "`
 	fname=`echo ${DST} | sed 's/\./_/g'` 
-	${FPING} -A -q -s -i10 -c50 -p 25 -S ${SRC} -t1000 ${DST} 2>&1 | grep ':' | tr '%/,' ' ' | awk '
+
+	${SETFIB} ${FPING} -A -q -s -i10 -c50 -p 25 -S ${SRC} -t1000 ${DST} 2>&1 | grep ':' | tr '%/,' ' ' | awk '
 /xmt/ { 
         name = $1;
 	gsub(/\./, "_", name);
@@ -71,7 +80,6 @@ if [ $# -lt 1 ]; then
 }
 ' >> ${TMPFILE}
 	
-
 	echo "multigraph rtt_${FSRC}"
 	grep ^rtt ${TMPFILE}
 	echo "multigraph loss_${FSRC}"
@@ -79,18 +87,26 @@ if [ $# -lt 1 ]; then
 	rm ${TMPFILE}
 
 elif [ "$1" == "suggest" ]; then
-	for DST in ${IPS}; do
-		echo ${DST}
+	
+	# interface name format is igb0:2 - number after colon is fib number
+	for int in ${interface}; do
+		FIB=`echo ${int} | cut -f2 -d:`
+		NAME=`echo ${int} | cut -f1 -d:`
+		IPS=`ifconfig ${NAME} | grep -v tunnel | awk '/inet /{print $2}' | grep -Ev '^(10|192|127)\.'`
+		for DST in ${IPS}; do
+			echo ${DST}_${FIB}
+		done
 	done
+
 
 elif [ "$1" == "autoconf" ]; then
 
-	if [ -z ${hosts} ]; then
+	if [ -z "${hosts}" ]; then
 		echo "no (env.hosts is not defined)"
 		exit 1
 	fi
 
-	if [ -z ${interface} ]; then
+	if [ -z "${interface}" ]; then
 		echo "no (env.interface is not defined)"
 		exit 1
 	fi
@@ -101,7 +117,7 @@ elif [ "$1" == "autoconf" ]; then
 
 elif [ "$1" == "config" ]; then
 
-	if [ -z ${SRC} ]; then
+	if [ -z "${SRC}" ]; then
 		exit 1
 	fi
 
@@ -110,7 +126,7 @@ elif [ "$1" == "config" ]; then
 	echo "graph_args --lower-limit 0 --base 1000"
 	echo "graph_vlabel milliseconds"
 	echo "graph_category connectivity"
-	echo "graph_info This graph shows ICMP RTT for {$SRC} on interface ${interface} toward multiple destination hosts"
+	echo "graph_info This graph shows ICMP RTT for {$SRC} on FIB ${FIB} toward multiple destination hosts"
 
 	COLOR=7
 	for DST in `echo ${hosts} | tr , " "`; do
@@ -129,7 +145,7 @@ elif [ "$1" == "config" ]; then
 	echo "graph_scale no"
 	echo "graph_vlabel percent"
 	echo "graph_category connectivity"
-	echo "graph_info This graph shows ICMP Packet Loss for source address ${SRC} on interface ${interface} toward multiple destination hosts"
+	echo "graph_info This graph shows ICMP Packet Loss for source address ${SRC} on FIB ${FIB} toward multiple destination hosts"
 
 	COLOR=7
 	for DST in `echo ${hosts} | tr , " "`; do
