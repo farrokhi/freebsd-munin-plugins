@@ -44,7 +44,12 @@ SCRIPT_NAME=$(basename $0)
 SRC=`echo $SCRIPT_NAME | sed -n s/multiping_//p`
 FPING=`which fping` || ( echo "fping required but not found"; exit 1)
 FSRC=`echo ${SRC} | sed 's/\./_/g'`
-IPS=`ifconfig ${interface} | grep -v tunnel | awk '/inet /{print $2}' | grep -Ev '^(10|192|127)\.'`
+
+IPS=""
+for int in ${interface}; do
+    IPTEMP=`ifconfig ${int} | grep -v tunnel | awk '/inet /{print $2}' | grep -Ev '^(10|192|127)\.'`
+    IPS="${IPS} ${IPTEMP}"
+done
 
 if [ $# -lt 1 ]; then
 
