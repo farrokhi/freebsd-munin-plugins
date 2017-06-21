@@ -11,7 +11,11 @@ A set of FreeBSD specific plugins for Munin
 - You need to install `lang/gawk` in order to run `intr_` plugin.
 - You need to install `sysutils/ipmitool` in order to run `ipmi_` plugin.
 - These are wildcard plugins, and should be installed using `munin-node-configure` program
-- Some plugins such as `ipmi_` and `multiping_` need to have root access to run.
+- Some plugins such as `pf_`, `ipmi_` and `multiping_` need to have root access to run. To tell Munin to run a plugin as root, adapt the following snippet and add it to `/usr/local/etc/munin/plugin-conf.d/plugins.conf`:
+```
+[pf_*]
+user root
+```
 
 ## Setup
 1. Make sure `sysutils/munin-node` is installed
