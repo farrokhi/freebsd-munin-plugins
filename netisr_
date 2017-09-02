@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2016 Babak Farrokhi.  All rights reserved.
+# Copyright (c) 2017 Babak Farrokhi.  All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -94,21 +94,21 @@ elif [ "$1" == "config" ]; then
 
 	awk '
 /  ('${STAT_TYPE}')  / {
-	print "t"$2 "_"$3"_queued.label Thread "$2 " Queued";
-	print "t"$2 "_"$3"_handled.label Thread "$2 " Handled";
-	print "t"$2 "_"$3"_dropped.label Thread "$2 " Dropped";
-	print "t"$2 "_"$3"_hdispatched.label Thread "$2 " Hybrid-Dispatched";
-	print "t"$2 "_"$3"_dispatched.label Thread "$2" Dispatched";
-	print "t"$2 "_"$3"_queued.type DERIVE";
-	print "t"$2 "_"$3"_handled.type DERIVE";
-	print "t"$2 "_"$3"_dropped.type DERIVE";
-	print "t"$2 "_"$3"_hdispatched.type DERIVE";
-	print "t"$2 "_"$3"_dispatched.type DERIVE";
-	print "t"$2 "_"$3"_queued.min 0";
-	print "t"$2 "_"$3"_handled.min 0";
-	print "t"$2 "_"$3"_dropped.min 0";
-	print "t"$2 "_"$3"_hdispatched.min 0";
-	print "t"$2 "_"$3"_dispatched.min 0";
+	print $3"_queued.label  Queued";
+	print $3"_handled.label  Handled";
+	print $3"_dropped.label  Dropped";
+	print $3"_hdispatched.label  Hybrid-Dispatched";
+	print $3"_dispatched.label  Dispatched";
+	print $3"_queued.type DERIVE";
+	print $3"_handled.type DERIVE";
+	print $3"_dropped.type DERIVE";
+	print $3"_hdispatched.type DERIVE";
+	print $3"_dispatched.type DERIVE";
+	print $3"_queued.min 0";
+	print $3"_handled.min 0";
+	print $3"_dropped.min 0";
+	print $3"_hdispatched.min 0";
+	print $3"_dispatched.min 0";
 }' ${STATFILE}
 	
 fi
