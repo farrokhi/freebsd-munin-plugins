@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2015 Babak Farrokhi.  All rights reserved.
+# Copyright (c) 2017 Babak Farrokhi.  All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -46,19 +46,36 @@ if [ $# -lt 1 ]; then
 		echo "Should run from symlink"
 		exit 1
 	fi
-
 	awk '
+BEGIN {
+	OFS="";
+	qed=0;
+	handled=0;
+	dropped=0;
+	hdised=0;
+	dised=0;
+	st="";
+}
 /  ('${STAT_TYPE}')  / {
-	print "t"$2 "_"$3"_queued.value "$9;
-	print "t"$2 "_"$3"_handled.value "$10;
-	print "t"$2 "_"$3"_dropped.value "$8;
-	print "t"$2 "_"$3"_hdispatched.value "$7;
-	print "t"$2 "_"$3"_dispatched.value "$6;
-} ' ${STATFILE}
+	st=$3;
+	qed=qed+$9;
+	handled=handled+$10;
+	dropped=dropped+$8;
+	hdised=hdised+$7;
+	dised=dised+$6;
+} 
+END {
+	print st, "_queued.value ", qed;
+	print st, "_handled.value ", handled;
+	print st, "_dropped.value ", dropped;
+	print st, "_hdispatched.value ", hdised;
+	print st, "_dispatched.value ", dised;
+}
+' ${STATFILE}
 
 elif [ "$1" == "suggest" ]; then
 	
-	awk '/---/{print $1}' ${STATFILE}
+	awk '/--$/{print $1}' ${STATFILE}
 
 elif [ "$1" == "autoconf" ]; then
    ${NETSTAT} -Q  >/dev/null 2>&1  && echo yes || echo no
@@ -77,21 +94,21 @@ elif [ "$1" == "config" ]; then
 
 	awk '
 /  ('${STAT_TYPE}')  / {
-	print "t"$2 "_"$3"_queued.label Thread "$2 " Queued";
-	print "t"$2 "_"$3"_handled.label Thread "$2 " Handled";
-	print "t"$2 "_"$3"_dropped.label Thread "$2 " Dropped";
-	print "t"$2 "_"$3"_hdispatched.label Thread "$2 " Hybrid-Dispatched";
-	print "t"$2 "_"$3"_dispatched.label Thread "$2" Dispatched";
-	print "t"$2 "_"$3"_queued.type DERIVE";
-	print "t"$2 "_"$3"_handled.type DERIVE";
-	print "t"$2 "_"$3"_dropped.type DERIVE";
-	print "t"$2 "_"$3"_hdispatched.type DERIVE";
-	print "t"$2 "_"$3"_dispatched.type DERIVE";
-	print "t"$2 "_"$3"_queued.min 0";
-	print "t"$2 "_"$3"_handled.min 0";
-	print "t"$2 "_"$3"_dropped.min 0";
-	print "t"$2 "_"$3"_hdispatched.min 0";
-	print "t"$2 "_"$3"_dispatched.min 0";
+	print $3"_queued.label  Queued";
+	print $3"_handled.label  Handled";
+	print $3"_dropped.label  Dropped";
+	print $3"_hdispatched.label  Hybrid-Dispatched";
+	print $3"_dispatched.label  Dispatched";
+	print $3"_queued.type DERIVE";
+	print $3"_handled.type DERIVE";
+	print $3"_dropped.type DERIVE";
+	print $3"_hdispatched.type DERIVE";
+	print $3"_dispatched.type DERIVE";
+	print $3"_queued.min 0";
+	print $3"_handled.min 0";
+	print $3"_dropped.min 0";
+	print $3"_hdispatched.min 0";
+	print $3"_dispatched.min 0";
 }' ${STATFILE}
 	
 fi

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2016 Babak Farrokhi.  All rights reserved.
+# Copyright (c) 2015 Babak Farrokhi.  All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -25,78 +25,41 @@
 # SUCH DAMAGE.
 #
 #
-# 12-Aug-2015 @farrokhi
-# This script extracts IRQ interrupt rate for network interfaces from "vmstat -i" 
-# on FreeBSD and feeds to munin
+# March-2017 @farrokhi
+# This plugin extracts "ip input" buffer overruns using sysctl and feeds
+# to munin (or any other compatible agent) for graphing
 #
-# XXX: This script relies on lang/gawk (we use extended regexp in awk).
+# Buffer overrung on IP Input happens when CPU is not fast enough
+# to pick ip packet from queue. This can be observed by seeing a 
+# CPU hogging "task queue" process in top.
 #
 # Magic markers:
 #%# family=auto
-#%# capabilities=autoconf suggest
+#%# capabilities=autoconf 
 
 
 SCRIPT_NAME=$(basename $0)
-STAT_TYPE=`echo $SCRIPT_NAME | sed -n s/netirq_//p`
-VMSTAT="/usr/bin/vmstat"
-AWK=`which gawk` || ( echo "gawk not found"; exit 1 )
-
-
-STATFILE=`mktemp -t netirq`
-${VMSTAT} -i | sort -V > ${STATFILE} 2>/dev/null
 
 if [ $# -lt 1 ]; then
 
-	if [ -z ${STAT_TYPE} ]; then
-		echo "Should run from symlink"
-		exit 1
-	fi
+	DROPS=`sysctl -n net.inet.ip.intr_queue_drops`
+	echo ip_idrops.value ${DROPS}
 
-	${AWK} '
-{ FS = "[ ]{2,}" }  
-/'${STAT_TYPE}'/ {
-	split($1,name,":"); 
-	print name[1]".value "$2
-}' ${STATFILE}
-
-
-elif [ "$1" == "suggest" ]; then   
-  for iface in `ifconfig -lu ether`; do
-   echo ${iface}
-  done
 
 elif [ "$1" == "autoconf" ]; then
-   ${VMSTAT} -i  >/dev/null 2>&1  && echo yes || echo no
+   echo yes
    exit 0
 
 elif [ "$1" == "config" ]; then
 
-	if [ -z ${STAT_TYPE} ]; then
-		echo "Should run from symlink";
-		exit 1
-	fi
-
-	echo "graph_title IRQ Statistics for ${STAT_TYPE}"
+	echo "graph_title IP Input Drops"
 	echo "graph_args --lower-limit 0 --base 1000"
-	echo "graph_vlabel interrupts / second"
+	echo "graph_vlabel packets / second"
 	echo "graph_category system"
 
-	cat ${STATFILE} | ${AWK} '
-BEGIN { 
-	FS = "[ ]{2,}" 
-}  
-
-/'${STAT_TYPE}'/ {
-	split($1,name,":"); 
-        gsub(/ /,"", $1);
-	print name[1]".label " $1;
-	print name[1]".type DERIVE";
-	print name[1]".min 0";
-	print name[1]".draw LINE2";
-}
-'
+	echo ip_idrops.label "Input Drops"
+	echo ip_idrops.type DERIVE
+	echo ip_idrops.min 0
 
 fi
-
-rm ${STATFILE}
 
