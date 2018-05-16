@@ -75,5 +75,7 @@ if [ "$1" = "config" ]; then
 	exit 0
 fi
 
-iostat -c2 -w0.1 -n0 | tail -1 | awk '{ print "user.value " $3 "\nnice.value " $4 "\nsystem.value " $5 "\ninterrupt.value " $6 "\nidle.value " $7 }'
+#iostat -c2 -w0.1 -n0 | tail -1 | awk '{ print "user.value " $3 "\nnice.value " $4 "\nsystem.value " $5 "\ninterrupt.value " $6 "\nidle.value " $7 }'
+# It expects to find our cpustat binary in /usr/local/bin
+/usr/local/bin/cpustat
 
