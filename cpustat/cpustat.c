@@ -29,11 +29,13 @@
 #include <kvm.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <strings.h>
+#include <unistd.h>
 #include <sys/sysctl.h>
 #include <sys/types.h>
 
-static struct statinfo cur;
+static struct statinfo cur, last;
 kvm_t *kd = NULL;
 
 static int readvar(kvm_t *kd, const char *name, int nlid, void *ptr,
@@ -52,21 +54,36 @@ static int readvar(kvm_t *kd, const char *name, int nlid, void *ptr,
     return (0);
 }
 
-static void cpustats(void) {
+static void cpustats(bool print) {
     int state;
+    long tmp;
     double cptime = 0.0;
     char *names[] = {"user", "nice", "system", "interrupt", "idle"};
 
     readvar(kd, "kern.cp_time", 0, &cur.cp_time, sizeof(cur.cp_time));
 
+    for (state = 0; state < CPUSTATES; state++) {
+        tmp = cur.cp_time[state];
+        cur.cp_time[state] -= last.cp_time[state];
+        last.cp_time[state] = tmp;
+    }
+
     for (state = 0; state < CPUSTATES; ++state)
         cptime += cur.cp_time[state];
-    for (state = 0; state < CPUSTATES; ++state)
-        printf("%s.value %.0f\n", names[state],
-               rint(100. * cur.cp_time[state] / (cptime ? cptime : 1)));
+
+    if (print) {
+        for (state = 0; state < CPUSTATES; ++state)
+            printf("%s.value %.0f\n", names[state],
+                   rint(100. * cur.cp_time[state] / (cptime ? cptime : 1)));
+    }
 }
 
 int main(void) 
 { 
-    cpustats(); 
+    bzero(cur.cp_time, sizeof(cur.cp_time));
+    bzero(last.cp_time, sizeof(last.cp_time));
+    cpustats(false);
+    sleep(1);
+    cpustats(true);
+
 }
