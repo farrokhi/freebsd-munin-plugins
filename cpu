@@ -30,6 +30,7 @@
 
 if [ "$1" = "autoconf" ]; then
 	echo yes
+	exit 0
 fi
 
 if [ "$1" = "config" ]; then
