@@ -1,0 +1,107 @@
+#!/bin/sh
+#                                                                                                   
+# Copyright 2018, Babak Farrokhi. All rights reserved
+#
+# vim: sta:et:sw=4:ts=4:sts=4
+# -*- coding: utf-8 -*-
+#
+# Wildcard-plugin to monitor queue usage on Chelsio (cxl) NICs
+#
+#    ln -s /usr/share/munin/node/plugins-auto/chelsio_queues_ /etc/munin/node.d/chelsio_queues_cxl0
+#
+# ...will monitor queues on cxl0.
+#
+# Magic markers (optional - used by munin-config and some installation
+# scripts):
+#
+#%# family=auto
+#%# capabilities=autoconf suggest
+
+INTERFACE=${0##*chelsio_queues_}
+
+init_vars()
+{
+    if [ -z ${INTERFACE} ]; then
+        echo "Please use symlinked script (e.g. chelsio_queues_cxl0)"
+        exit 1
+    fi
+    IFINDEX=`echo ${INTERFACE} | egrep -o '[0-9]+'`
+    TXQ=`/sbin/sysctl -n dev.cxl.${IFINDEX}.ntxq`
+    RXQ=`/sbin/sysctl -n dev.cxl.${IFINDEX}.nrxq`
+    LAST_TXQ=`expr ${TXQ} - 1`
+    LAST_RXQ=`expr ${RXQ} - 1`
+}
+
+
+case $1 in
+    autoconf)
+	    if [ -x /sbin/sysctl ]; then ## FIXME: check if any cxl interface exist
+    	    echo yes
+        	exit 0
+    	else
+    		echo "no (no cxl interface is present)"
+        	exit 0
+    	fi
+        ;;
+
+	suggest)
+	    if [ -x /sbin/ifconfig ]; then
+        	ifconfig -l | xargs -n 1 echo | grep ^cxl
+        	exit 0
+    	else
+            exit 1
+        fi
+        ;;
+
+    config)
+        init_vars
+        echo "graph_title Interface ${INTERFACE} TX and RX Frames per Queue"
+        echo "graph_args --base 1000"
+        echo "graph_vlabel Frames"
+        echo "graph_category network"
+        echo "graph_info This graph shows the number of frames transmitted or received on ${INTERFACE} interface"
+        for i in `seq 0 ${LAST_TXQ}`; do
+            echo "tx_${i}.label TX Frames on Queue ${i}"
+            echo "tx_${i}.type DERIVE"
+            echo "tx_${i}.min 0"
+        done
+        for i in `seq 0 ${LAST_RXQ}`; do
+            echo "rx_${i}.label RX Frames on Queue ${i}"
+            echo "rx_${i}.type DERIVE"
+            echo "rx_${i}.min 0"
+        done
+        exit 0
+	    ;;
+
+    *)
+        init_vars
+
+        ## TX Queues Information
+        TUNABLE=""
+        for i in `seq 0 ${LAST_TXQ}`; do
+            TUNABLE="${TUNABLE} dev.cxl.${IFINDEX}.txq.${i}.r_enqueues"
+        done
+        
+        VALUES=`/sbin/sysctl -n ${TUNABLE}`
+        CNT=0
+        for v in ${VALUES}; do
+            echo "tx_${CNT}.value ${v}"
+            CNT=$(($CNT+1))
+        done
+
+        ## RX Queues Information
+        TUNABLE=""
+        for i in `seq 0 ${LAST_RXQ}`; do
+            TUNABLE="${TUNABLE} dev.cxl.${IFINDEX}.rxq.${i}.rxcsum"
+        done
+        
+        VALUES=`/sbin/sysctl -n ${TUNABLE}`
+        CNT=0
+        for v in ${VALUES}; do
+            echo "rx_${CNT}.value ${v}"
+            CNT=$(($CNT+1))
+        done
+
+        ;;
+esac
+

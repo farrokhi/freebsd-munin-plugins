@@ -1,0 +1,101 @@
+#!/bin/sh
+#                                                                                                   
+# Copyright 2018, Babak Farrokhi. All rights reserved
+#
+# vim: sta:et:sw=4:ts=4:sts=4
+# -*- coding: utf-8 -*-
+#
+# Wildcard-plugin to monitor inbound and outbound distribution of frames by size range on Chelsio cxl NICs.
+#
+#    ln -s /usr/share/munin/node/plugins-auto/chelsio_framesize_ /etc/munin/node.d/chelsio_framesize_cxl0
+#
+# ...will monitor cxl0.
+#
+# Magic markers (optional - used by munin-config and some installation
+# scripts):
+#
+#%# family=auto
+#%# capabilities=autoconf suggest
+
+INTERFACE=${0##*chelsio_framesize_}
+
+init_vars()
+{
+    if [ -z ${INTERFACE} ]; then
+        echo "Please use symlinked script (e.g. chelsio_framesize_cxl0)"
+        exit 1
+    fi
+    IFINDEX=`echo ${INTERFACE} | egrep -o '[0-9]+'`
+    SIZE_LIST="64 65_127 128_255 256_511 512_1023 1024_1518 1519_max"
+}
+
+
+case $1 in
+    autoconf)
+	    if [ -x /sbin/sysctl ]; then ## FIXME: check if any cxl interface exist
+    	    echo yes
+        	exit 0
+    	else
+    		echo "no (no cxl interface is present)"
+        	exit 0
+    	fi
+        ;;
+
+	suggest)
+	    if [ -x /sbin/ifconfig ]; then
+        	ifconfig -l | xargs -n 1 echo | grep ^cxl
+        	exit 0
+    	else
+            exit 1
+        fi
+        ;;
+
+    config)
+        init_vars
+        echo "graph_title Interface ${INTERFACE} TX and RX Frame Size Distribution"
+        echo "graph_args --base 1000"
+        echo "graph_vlabel Frames by size"
+        echo "graph_category network"
+        echo "graph_info This graph shows the number of frams transmitted or received on ${INTERFACE} interface separated by size"
+        for dir in tx rx; do
+            for size in ${SIZE_LIST}; do
+                echo "${dir}_${size}.label ${size} bytes frames ${dir}ed on ${INTERFACE}"
+                echo "${dir}_${size}.type DERIVE"
+                echo "${dir}_${size}.min 0"
+            done
+        done
+        exit 0
+	    ;;
+
+    *)
+        init_vars
+
+        v_names=`mktemp`
+        v_values=`mktemp`
+
+        ## TX and RX Frame Size Information
+        TUNABLE=""
+        for dir in tx rx; do
+            for size in ${SIZE_LIST}; do
+                TUNABLE="${TUNABLE} dev.cxl.${IFINDEX}.stats.${dir}_frames_${size}"
+            done
+        done
+       
+        # build left side of output
+        for dir in tx rx; do
+            for size in ${SIZE_LIST}; do
+                echo "${dir}_${size}.value" >> ${v_names}
+            done
+        done
+
+        # build right side of output
+        VALUES=`/sbin/sysctl -n ${TUNABLE}`
+        echo $VALUES | xargs -n1 echo > ${v_values}
+
+        # merge left and right
+        paste -d" " ${v_names} ${v_values}
+
+        rm ${v_names} ${v_values}
+        ;;
+esac
+
