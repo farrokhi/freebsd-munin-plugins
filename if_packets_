@@ -1,0 +1,65 @@
+#!/bin/sh
+# -*- sh -*-
+#
+# Wildcard-plugin to monitor network interfaces. To monitor an
+# interface, link if_packets_<interface> to this file. E.g.
+#
+#    ln -s /usr/local/share/munin/plugins/if_packets_  /usr/local/etc/munin/plugins/if_packets_em0 
+#
+# ...will monitor eth0 interface.
+#
+# Magic markers (optional - used by munin-config and some installation
+# scripts):
+#
+#%# family=auto
+#%# capabilities=autoconf suggest
+
+INTERFACE=${0##*if_packets_}
+IFCOUNTERS="/usr/local/bin/ifcounters"
+
+if [ "$1" = "autoconf" ]; then
+	if [ -x /sbin/ifconfig -o -x ${IFCOUNTERS} ]; then
+		echo yes
+		exit 0
+	else
+		echo "no (${IFCOUNTERS} not found)"
+		exit 0
+	fi
+fi
+
+if [ "$1" = "suggest" ]; then
+	if [ -x /sbin/ifconfig ]
+	then
+		ifconfig -l | sed -Ee 's/[[:<:]](pfsync|faith|pf(log|sync)|lo|plip|carp|enc|fwe)[^ ]*//g' | xargs -n 1 echo
+		exit 0
+	else
+		exit 1
+	fi
+fi
+
+if [ "$1" = "config" ]; then
+
+	echo "graph_order rpackets opackets"
+	echo "graph_title $INTERFACE pps"
+	echo 'graph_args --base 1000'
+	echo 'graph_vlabel packets per ${graph_period} in (-) / out (+)'
+	echo 'graph_category network'
+	echo "graph_info This graph shows the packets counter of the $INTERFACE network interface. Please note that the traffic is shown in packets per second."
+	echo 'rpackets.label received'
+	echo 'rpackets.type COUNTER'
+	echo 'rpackets.graph no'
+
+	echo 'rpackets.min 0'
+	echo 'opackets.label pps'
+	echo 'opackets.type COUNTER'
+	echo 'opackets.colour COLOUR19'
+	echo 'opackets.draw AREA'
+	echo 'opackets.negative rpackets'
+
+	echo 'opackets.min 0'
+	echo "opackets.info Packets sent (+) and received (-) on the $INTERFACE network interface."
+	exit 0
+fi
+
+${IFCOUNTERS} -p ${INTERFACE}
+
