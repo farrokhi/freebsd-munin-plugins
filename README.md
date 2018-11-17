@@ -27,15 +27,37 @@ user root
 
 ## Plugins
 
-- **intr_** graphs CPU timers, taken from `vmstat -i` output
-- **netirq_** graphs per interface and per queue (in case of multi-queue) interrupt rates, taken from `vmstat -i` output
-- **netisr_** graphs per-thread/per-protocol [`netisr(9)`](https://www.freebsd.org/cgi/man.cgi?format=html&query=netisr%289%29) statistics, taken from `netstat -Q`
-- **netmem_** graphs [`mbuf(9)`](https://www.freebsd.org/cgi/man.cgi?format=html&query=mbuf%289%29) statistics, taken from `netstat -m`
-- **pf_** graphs [`pf(4)`](https://www.freebsd.org/cgi/man.cgi?query=pf&sektion=4&apropos=0) firewall statistics, taken from `pfctl -vsi`
-- **udp_** graphs UDP protocol traffic and error statistics, taken from `netstat -s -p udp`
-- **ip_** graphs IP protocol traffic and error statistics, taken from `netstat -s -p ip`
-- **ipmi_** graphs temperature, fan speed and power information from hardware chassis, taken from `ipmitool`
-- **multiping_** graphs RTT and PacketLoss to multiple destinations from multiple source addresses on a given network interface
+- `intr_` graphs CPU timers, taken from `vmstat -i` output
+- `cpu` graphs idle/system/user/nice/interrupt values for cpu (aggregated) - taken from `cpustat` program
+- `if_` graphs interface traffic - taken from `ifcounters` program
+- `if_packets_` graphs interface pps counters - taken from `ifcounters` program
+- `netirq_` graphs per interface and per queue (in case of multi-queue) interrupt rates, taken from `vmstat -i` output
+- `netisr_` graphs per-thread/per-protocol [`netisr(9)`](https://www.freebsd.org/cgi/man.cgi?format=html&query=netisr%289%29) statistics, taken from `netstat -Q`
+- `netmem_` graphs [`mbuf(9)`](https://www.freebsd.org/cgi/man.cgi?format=html&query=mbuf%289%29) statistics, taken from `netstat -m`
+- `pf_` graphs [`pf(4)`](https://www.freebsd.org/cgi/man.cgi?query=pf&sektion=4&apropos=0) firewall statistics, taken from `pfctl -vsi`
+- `udp_` graphs UDP protocol traffic and error statistics, taken from `netstat -s -p udp`
+- `ip_` graphs IP protocol traffic and error statistics, taken from `netstat -s -p ip`
+- `ipmi_` graphs temperature, fan speed and power information from hardware chassis, taken from `ipmitool`
+- `multiping_` graphs RTT and PacketLoss to multiple destinations from multiple source addresses on a given network interface
+
+**Important Note**
+Some of these plugins use `netstat` or `pfctl` output. Please beware that this might affect your system performance while under load or even lead to deadlock. The less you call them, the better.
+
+### `ifcounters` helper program
+
+In order to reduce number of calls to `netstat` to get interface counters (bytes, packets, errors, queue drops, etc), I created a small helper program that prints the counter values for given interface in munin friendly format. This also eliminate several calls to `awk` or `grep` in shell-script based munin plugins.
+
+You can find it under a directory with the same name in this repository. You should build and install it in order to use `if_` and `if_packets_` plugins:
+```
+cd ifcounters
+make install clean
+```
+
+### `cpustat` helper program
+
+This helper program displays a simple average of `user`, `nice`, `system`, `interrupt` and `idle` values (measured in percent). It works as expected on UP and SMP machines so you won't need to do any fancy calculations to get a number. 
+Please note that if you need accourate CPU usage information, you need to keep all the counters for each core separately. This helper program is created to give you an overall idea of your cpu resource usage on the whole.
+
 
 ## Sample Graphs
 ![IPMI Temperature](screenshots/ipmi_temp-day.png "Temperature from ipmi_ plugin")
