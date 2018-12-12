@@ -1,0 +1,67 @@
+#!/bin/sh
+# -*- sh -*-
+#
+# Wildcard-plugin to monitor cxgbe NIC filter counters.
+#
+#    ln -s /usr/local/share/munin/plugins/chelsio_filters_  /usr/local/etc/munin/plugins/chelsio_filters_t5nex0
+#
+# Magic markers (optional - used by munin-config and some installation
+# scripts):
+#
+#%# family=auto
+#%# capabilities=autoconf suggest
+
+NEXUS=${0##*chelsio_filters_}
+CXGBETOOL="/usr/sbin/cxgbetool"
+
+if [ "$1" = "autoconf" ]; then
+	if [ -x ${CXGBETOOL} ]; then
+		echo yes
+		exit 0
+	else
+		echo "no (${CXGBETOOL} not found)"
+		exit 0
+	fi
+fi
+
+if [ "$1" = "suggest" ]; then
+        NXLIST=`sysctl dev.t5nex | grep "hw_revision" | awk -F'.' '{print $3}' | sort -n`
+        if [ $? -eq 0 ]
+	then
+                for i in ${NXLIST}; do
+                    echo "t5nex${i}"
+                done
+		exit 0
+	else
+		exit 1
+	fi
+fi
+
+# we need $NEXUS for "config" and values
+if [ -z ${NEXUS} ]; then
+    echo "please run from appropriate symlink"
+    exit 1
+fi
+
+if [ "$1" = "config" ]; then
+
+        FILTERS=`${CXGBETOOL} ${NEXUS} filter list | awk 'BEGIN{OFS=""} /\//{print $13,"_" ,$1}'`
+	echo "graph_title $NEXUS hits per second"
+	echo 'graph_args --base 1000'
+	echo 'graph_vlabel hits per ${graph_period} in (-) / out (+)'
+	echo 'graph_category network'
+	echo "graph_info This graph shows the filter list hit count for the $INTERFACE network interface."
+
+        for F in ${FILTERS}; do
+    	    echo "${F}.label hit/sec"
+	    echo "${F}.type COUNTER"
+	    echo "${F}.draw LINE2"
+	    echo "${F}.min 0"
+            echo "${F}.info Number of packets hit the rule (${F}) on the $INTERFACE NIC."
+        done
+
+	exit 0
+fi
+
+${CXGBETOOL} ${NEXUS} filter list | awk 'BEGIN{OFS=""} /\//{print $13,"_" ,$1, ".value " , $2}'
+
