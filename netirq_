@@ -52,14 +52,6 @@ if [ $# -lt 1 ]; then
 		exit 1
 	fi
 
-	${AWK} '
-{ FS = "[ ]{2,}" }  
-/'${STAT_TYPE}'/ {
-	split($1,name,":"); 
-	print name[1]".value "$2
-}' ${STATFILE}
-
-
 elif [ "$1" == "suggest" ]; then   
   for iface in `ifconfig -lu ether`; do
    echo ${iface}
@@ -95,8 +87,17 @@ BEGIN {
 	print name[1]".draw LINE2";
 }
 '
+else
+
+        ${AWK} '
+{ FS = "[ ]{2,}" }
+/'${STAT_TYPE}'/ {
+        split($1,name,":");
+        print name[1]".value "$2
+}' ${STATFILE}
 
 fi
 
 rm ${STATFILE}
+
 
