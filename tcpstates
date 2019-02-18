@@ -102,16 +102,16 @@ else
   /CLOSE_WAIT/          { close_wait=close_wait+1 }
 
 END{
-   print "established.value " estab;
-   print "syn_sent.value " syn_send;
-   print "listen.value " listen;
-   print "time_wait.value " time_wait;
-   print "closing.value " closing;
-   print "closed.value " closed;
-   print "last_ack.value " last_ack;
-   print "fin_wait_1.value " fin_wait_1;
-   print "fin_wait_2.value " fin_wait_2;
-   print "close_wait.value " close_wait;
+   print "ESTABLISH.value " estab;
+   print "SYN_SENT.value " syn_send;
+   print "LISTEN.value " listen;
+   print "TIME_WAIT.value " time_wait;
+   print "CLOSING.value " closing;
+   print "CLOSED.value " closed;
+   print "LAST_ACK.value " last_ack;
+   print "FIN_WAIT_1.value " fin_wait_1;
+   print "FIN_WAIT_2.value " fin_wait_2;
+   print "CLOSE_WAIT.value " close_wait;
 }
 '
 fi
