@@ -13,6 +13,7 @@ No configuration
 =head1 AUTHOR
 
 Babak Farrokhi
+Modified by Mark Saad
 
 =head1 LICENSE
 
@@ -73,16 +74,44 @@ if [ "$1" = "config" ]; then
       done
 	
    exit 0
+
+else
+  netstat -an -p tcp -f inet | awk '$NF ~ /[A-Z]/ {print $NF}'|awk '
+  BEGIN{
+    estab = "0";
+    syn_sent = "0";
+    listen = "0";
+    time_wait = "0";
+    closing = "0";
+    closed = "0";
+    last_ack = "0";
+    fin_wait_1 = "0";
+    fin_wait_2 = "0";
+    close_wait = "0";
+  }
+
+  /ESTABLISH/           { estab=estab+1 }
+  /SYN_SENT/            { syn_sent=syn_sent+1 }
+  /LISTEN/              { listen=listen+1 }
+  /TIME_WAIT/           { time_wait=time_wait+1 }
+  /CLOSING/             { closing=closing+1 }
+  /CLOSED/              { closed=closed+1 }
+  /LAST_ACK/            { last_ack=last_ack+1 }
+  /FIN_WAIT_1/          { fin_wait_1=fin_wait_1+1 }
+  /FIN_WAIT_2/          { fin_wait_2=fin_wait_2+1 }
+  /CLOSE_WAIT/          { close_wait=close_wait+1 }
+
+END{
+   print "ESTABLISH.value " estab;
+   print "SYN_SENT.value " syn_send;
+   print "LISTEN.value " listen;
+   print "TIME_WAIT.value " time_wait;
+   print "CLOSING.value " closing;
+   print "CLOSED.value " closed;
+   print "LAST_ACK.value " last_ack;
+   print "FIN_WAIT_1.value " fin_wait_1;
+   print "FIN_WAIT_2.value " fin_wait_2;
+   print "CLOSE_WAIT.value " close_wait;
+}
+'
 fi
-
-netstat -an | grep ^tcp4 | awk '{print $6}' | sort | uniq -c | awk '
-/SYN_SENT/            { print "syn_sent.value " $1 }
-/LISTEN/              { print "listen.value " $1 }
-/TIME_WAIT/           { print "time_wait.value " $1 }
-/CLOSING/             { print "closing.value " $1 }
-/CLOSED/              { print "closed.value " $1 }
-/LAST_ACK/            { print "last_ack.value " $1 }
-/FIN_WAIT_1/          { print "fin_wait_1.value " $1 }
-/FIN_WAIT_2/          { print "fin_wait_2.value " $1 }
-/CLOSE_WAIT/            { print "close_wait.value " $1 }'
-
