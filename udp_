@@ -1,5 +1,4 @@
 #!/bin/sh
-#
 # Copyright (c) 2016 Babak Farrokhi.  All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -57,28 +56,6 @@ print_config()
 if [ $# -lt 1 ]; then
 
 
-  case ${STAT_TYPE} in
-    traffic)
-		awk '
-/datagrams received/{print "received.value "$1};
-/ delivered$/		{print "delivered.value "$1};
-/datagrams output/	{print "sent.value "$1}
-' ${STATFILE}
-		;;
-    errors)
-		awk '
-/incomplete header/		{print "incomplete_header.value "$1};
-/bad data length field/	{print "bad_datalen.value "$1};
-/bad checksum/			{print "bad_checksum.value "$1}; 
-/with no checksum/		{print "no_checksum.value "$1}; 
-/due to no socket/		{print "nosock_drop.value "$1}; 
-/due to full socket/	{print "nobuf_drop.value "$1};
-/not for hashed pcb/	{print "nothashed.value "$1};
-' ${STATFILE}
-		;;
-  esac 
-
-
 elif [ "$1" == "suggest" ]; then   
    echo "traffic"
    echo "errors"
@@ -125,8 +102,30 @@ elif [ "$1" == "config" ]; then
 		print_config "nothashed" "Not hashed for PCB"
 	;;
   esac
+else
+   case ${STAT_TYPE} in
+    traffic)
+                awk '
+/datagrams received/{print "received.value "$1};
+/ delivered$/           {print "delivered.value "$1};
+/datagrams output/      {print "sent.value "$1}
+' ${STATFILE}
+                ;;
+    errors)
+                awk '
+/incomplete header/             {print "incomplete_header.value "$1};
+/bad data length field/ {print "bad_datalen.value "$1};
+/bad checksum/                  {print "bad_checksum.value "$1};
+/with no checksum/              {print "no_checksum.value "$1};
+/due to no socket/              {print "nosock_drop.value "$1};
+/due to full socket/    {print "nobuf_drop.value "$1};
+/not for hashed pcb/    {print "nothashed.value "$1};
+' ${STATFILE}
+                ;;
+  esac
 
 fi
 
 rm ${STATFILE}
+
 
