@@ -42,9 +42,6 @@ SCRIPT_NAME=$(basename $0)
 
 if [ $# -lt 1 ]; then
 
-	DROPS=`sysctl -n net.inet.ip.intr_queue_drops`
-	echo ip_idrops.value ${DROPS}
-
 
 elif [ "$1" == "autoconf" ]; then
    echo yes
@@ -60,6 +57,9 @@ elif [ "$1" == "config" ]; then
 	echo ip_idrops.label "Input Drops"
 	echo ip_idrops.type DERIVE
 	echo ip_idrops.min 0
-
+else
+	DROPS=`sysctl -n net.inet.ip.intr_queue_drops`
+	echo ip_idrops.value ${DROPS}
 fi
+
 
