@@ -39,20 +39,14 @@
 SCRIPT_NAME=$(basename $0)
 STAT_TYPE=`echo $SCRIPT_NAME | sed -n s/netirq_//p`
 VMSTAT="/usr/bin/vmstat"
-AWK=`which gawk` || ( echo "gawk not found"; exit 1 )
+AWK="/usr/local/bin/gawk"
 
 
 STATFILE=`mktemp -t netirq`
 ${VMSTAT} -i | sort -V > ${STATFILE} 2>/dev/null
 
-if [ $# -lt 1 ]; then
 
-	if [ -z ${STAT_TYPE} ]; then
-		echo "Should run from symlink"
-		exit 1
-	fi
-
-elif [ "$1" == "suggest" ]; then   
+if [ "$1" == "suggest" ]; then   
   for iface in `ifconfig -lu ether`; do
    echo ${iface}
   done
@@ -87,15 +81,9 @@ BEGIN {
 	print name[1]".draw LINE2";
 }
 '
+
 else
-
-        ${AWK} '
-{ FS = "[ ]{2,}" }
-/'${STAT_TYPE}'/ {
-        split($1,name,":");
-        print name[1]".value "$2
-}' ${STATFILE}
-
+          ${AWK} ' { FS = "[ ]{2,}" }  /'${STAT_TYPE}'/ { split($1,name,":"); print name[1]".value "$2 }'< ${STATFILE}
 fi
 
 rm ${STATFILE}

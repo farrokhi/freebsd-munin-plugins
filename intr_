@@ -1,7 +1,5 @@
 #!/bin/sh
-#
 # Copyright (c) 2016 Babak Farrokhi.  All rights reserved.
-#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
 # are met:
@@ -26,7 +24,7 @@
 #
 #
 # 12-Aug-2015 @farrokhi
-# This script extracts CPU interrupt rates from "vmstat -i" 
+# This script extracts CPU interrupt rates from "vmstat -i"
 # on FreeBSD and feeds to munin
 #
 # XXX: This script requires lang/gawk to be installed (we use extended regexp in awk).
@@ -34,7 +32,6 @@
 # Magic markers:
 #%# family=auto
 #%# capabilities=autoconf suggest
-
 
 SCRIPT_NAME=$(basename $0)
 STAT_TYPE=`echo $SCRIPT_NAME | sed -n s/intr_//p`
@@ -46,18 +43,8 @@ ${VMSTAT} -i | sort -V > ${STATFILE} 2>/dev/null
 
 if [ $# -lt 1 ]; then
 
-
-  case ${STAT_TYPE} in
-    cpu)
-		${AWK} '
-{ FS = "[ ]{2,}" }  
-/^cpu/ {
-	split($1,name,":");
-	print name[1]".value "$2;
-}' ${STATFILE}
-		;;
-  esac 
-
+elif [ "$1" == "fetch" ]; then   
+	${AWK} ' { FS = "[ ]{2,}" }  /^cpu/ { split($1,name,":"); print name[1]".value "$2; }' ${STATFILE}
 
 elif [ "$1" == "suggest" ]; then   
    echo "cpu"
@@ -89,4 +76,3 @@ elif [ "$1" == "config" ]; then
 fi
 
 rm ${STATFILE}
-
