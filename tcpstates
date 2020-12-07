@@ -68,7 +68,7 @@ if [ "$1" = "config" ]; then
 	echo 'graph_period second'
 	echo 'graph_info This graph shows the TCP activity of all the network interfaces combined.'
 
-   for f in syn_sent listen time_wait closing closed last_ack fin_wait_1 fin_wait_2 close_wait
+   for f in establish syn_sent listen time_wait closing closed last_ack fin_wait_1 fin_wait_2 close_wait
       do
          print_cfg $f
       done
@@ -103,7 +103,7 @@ else
 
 END{
    print "ESTABLISH.value " estab;
-   print "SYN_SENT.value " syn_send;
+   print "SYN_SENT.value " syn_sent;
    print "LISTEN.value " listen;
    print "TIME_WAIT.value " time_wait;
    print "CLOSING.value " closing;
