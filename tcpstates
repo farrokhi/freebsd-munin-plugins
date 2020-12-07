@@ -103,7 +103,7 @@ else
 
 END{
    print "ESTABLISH.value " estab;
-   print "SYN_SENT.value " syn_send;
+   print "SYN_SENT.value " syn_sent;
    print "LISTEN.value " listen;
    print "TIME_WAIT.value " time_wait;
    print "CLOSING.value " closing;
